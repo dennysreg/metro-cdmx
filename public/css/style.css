@@ -1,8 +1,10 @@
 .svg-container {
     display: inline-block;
     position: relative;
-    width: 55%;
-    padding-bottom: 75%; /* aspect ratio */
+    /* width: 55%;
+    padding-bottom: 40%; aspect ratio */
+    width: 100%;
+    padding-bottom: 100%; /* aspect ratio */
     vertical-align: top;
     overflow: hidden;   
     
@@ -15,7 +17,7 @@
   }
   
   svg .rect {    
-    /* stroke: rgb(64, 224, 53); */
+    stroke: rgb(64, 224, 53);
     stroke-width: 2px;        
   }
 
@@ -29,6 +31,6 @@ div {
      background-color: black;
 }
 
-body{
+/* body{
     background-color: black;
-}
+} */

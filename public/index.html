@@ -5,9 +5,8 @@
 
     <link rel="stylesheet" href="css/style.css">
     <meta charset="utf-8">  
-<script src="scripts/jquery.js"></script>  
-  <!-- <script src="scripts/d3.min.js"></script> -->
-  <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="scripts/jquery.js"></script>
+      <script src="https://d3js.org/d3.v4.min.js"></script>
 
 
 </head>
@@ -18,7 +17,7 @@
 <!-- <div id="chart"></div> -->
 
 <script>
-    var viewerWidth =1800,
+    var viewerWidth =1200,
         viewerHeight = 1200;
 
 var color = d3.scaleOrdinal()
@@ -71,12 +70,11 @@ var color = d3.scaleOrdinal()
                     .attr("r",12);                    
 
                 d3.select(g)
-                .append("text")           
+                .append("text")                
                 .attr("dy", "0.35em")     
-                .attr("class","linelabel")                
+                .attr("class","label")                
                 .attr("text-anchor", "middle")
-                .style("fill","white")
-                .style("z-index","9999")
+                // .style("z-index","9999")
                 .text(function(d) {return x;});
                 
 
@@ -109,9 +107,11 @@ var color = d3.scaleOrdinal()
             d.fy = null;
         } 
 
-            var zoom = d3.zoom()
-                        .scaleExtent([0.2, 0.1])
-                        .on("zoom", zoomed);
+            // var zoom = d3.zoom()
+            //             .scaleExtent([0.2, 0.1])
+            //             .on("zoom", zoomed);
+            
+            var zoom = d3.zoom().on("zoom", zoomed);
             var div = d3.select('body')
                 .append('div')
                 .classed("svg-container", true)
@@ -119,7 +119,7 @@ var color = d3.scaleOrdinal()
                     // .attr('width', viewerWidth)
                     // .attr('height', viewerHeight);
                     .attr("preserveAspectRatio", "xMinYMin meet")
-                    .attr("viewBox", "0 0 1400 1400")
+                    .attr("viewBox", "0 0 "+ viewerWidth+ " " + viewerHeight)
                     // Class to make it responsive.
                     .classed("svg-content-responsive", true);
                                 
@@ -129,37 +129,43 @@ var color = d3.scaleOrdinal()
                 .attr('height', viewerHeight)
                 .style('fill', 'none')
                 .style('pointer-events', 'all')
-                .call(zoom)
+                .call(zoom) // delete this line to disable free zooming
                 .attr('id','viz');
             
             var g = svg.append('g')
-                    .attr('id','myScrollArea');
+                    .attr('id','myScrollArea')
+                    ;
  
             
 
             
 
-            zoomer.call(zoom.transform, d3.zoomIdentity.translate(150,0)); //This is to pad my svg by a 150px on the left hand side
+            // zoomer.call(zoom.transform, d3.zoomIdentity.translate(150,0)); //This is to pad my svg by a 150px on the left hand side
+            // function zoomed() {
+            //     g.attr("transform", d3.event.transform);//The zoom and panning is affecting my G element which is a child of SVG
+            // }  
             function zoomed() {
-                g.attr("transform", d3.event.transform);//The zoom and panning is affecting my G element which is a child of SVG
-            }    
+                g.style("stroke-width", 1.5 / d3.event.transform.k + "px");
+                // g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")"); // not in d3 v4
+                g.attr("transform", d3.event.transform); // updated for d3 v4
+                }  
 
-            var elem = svg.selectAll("g")
+            var elem = g.selectAll("g")
                             .data(json.nodes); 
 
              // draw the graph edges       
             var force = d3.forceSimulation() 
             .force("charge",d3.forceManyBody().strength(-250).distanceMin(100).distanceMax(1000)) 
             .force("link", d3.forceLink().id(function(d) { return d.index }))
-            .force("center", d3.forceCenter(svg.node().getBoundingClientRect().width/2, svg.node().getBoundingClientRect().height/2))
-            .force("y", d3.forceY(0.01))
-            .force("x", d3.forceX(0.01))
+            .force("center", d3.forceCenter(viewerWidth/2, viewerHeight/2))
+            .force("y", d3.forceY(0.1))
+            .force("x", d3.forceX(0.1))
 
             force
                 .nodes(json.nodes) 
                 .force("link").links(json.links)
 
-            var link = svg.selectAll(".link")
+            var link = g.selectAll(".link")
                 .data(json.links)
                 .enter()
                 .append("line")
@@ -170,7 +176,7 @@ var color = d3.scaleOrdinal()
                 .attr("id", function(d){ return "_"+d.source + "_" + d.target;});
 ; 
 
-            var node = svg.selectAll(".node")
+            var node = g.selectAll(".node")
                 .data(json.nodes)
                 .enter().append("g")
                 .attr("class", "node")
@@ -244,7 +250,7 @@ var color = d3.scaleOrdinal()
             });
             // bind the drag interaction to the nodes
             // node.call(force.drag);
-            // circle.on("click", function(d){click(d)}) 
+            circle.on("click", function(d){click(d)}) 
 
             var cont = 1;
             var start, end;
@@ -311,7 +317,7 @@ var color = d3.scaleOrdinal()
                     .delay(function(d,i) { return i/ len * enter_duration;})                    
                     .style("opacity",1.0)
                     .attr("r", 15.0)
-                    .each("end",function() 
+                    .on("end",function() 
                         { 
                             d3.select(this).       
                             transition()
@@ -324,7 +330,7 @@ var color = d3.scaleOrdinal()
                                 }
                             })
                             .style("opacity",0.7)
-                            .each("end",function(){
+                            .on("end",function(){
                                 n--;
                                 if(!n){
                                     cycle(selection,len, times-1);
@@ -356,11 +362,11 @@ var color = d3.scaleOrdinal()
 	                    ruta = path(data.pred, start, end);
                         ruta.reverse();                        
 
-                        var selection = svg.selectAll('g')
+                        var selection = g.selectAll('g')
                             .filter(function(d){ return ruta.indexOf(d.id.toString()) >- 1;});
 
 
-                        notSelection = svg.selectAll('g')
+                        notSelection = g.selectAll('g')
                             .filter(function(d){ return ruta.indexOf(d.id.toString()) == - 1;});
                         //oculta las aristas
                         //1. genera array de aristas _origen_destino
@@ -377,7 +383,7 @@ var color = d3.scaleOrdinal()
                         //console.log('aristas: ' + aristas);
                         //2. seleccionar las aristas 
                         
-                        sel_edges = svg.selectAll('line.link')                            
+                        sel_edges = g.selectAll('line.link')                            
                             .filter(function(d){ return aristas.indexOf(d.id.toString()) == -1;});
                         
                         console.log(sel_edges);
