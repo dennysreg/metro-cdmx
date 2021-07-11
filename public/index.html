@@ -11,50 +11,13 @@
 
 </head>
 <body>
- <!-- <button onclick="StartScroll (false)" >+</button>
-    <button onclick="StartScroll (true)" >-</button>
-    <button onclick="ResetZoom()" >Reset</button> -->
-<!-- <div id="chart"></div> -->
-
 <script>
     var viewerWidth =1200,
         viewerHeight = 1200;
 
 var color = d3.scaleOrdinal()
-// var color = d3.scale.ordinal()
   .domain(["1","2","3","4","5","6","7","8","9","10","11","12"])
   .range(["#F248A4","#1378C7","#7E9426","#8ACEB5","#FEE011","#E22D27","#F68429","#009A68","#542917","#8A2495","#97A0A7","#AB9848"]);
-
-
-// function ResetZoom(){
-//     zoom.translate([0,0])
-//     .scale(1); 
-//     var svg = d3.select('#myScrollArea');
-//                 svg.transition().duration(500).attr('transform', 'translate(' + zoom.translate() + ') scale(' + zoom.scale() + ')');
-// }
-// function StartScroll(up) {
-//     var t = zoom.translate();
-//     var s = zoom.scale();
-//     var chart = document.getElementById('viz');
-//     var w = chart.getAttribute('width')/2.0;
-//     var h = chart.getAttribute('height')/2.0;
-
-//         console.log("here", t, s, w, h);
-
-//         var zoomFactor = s + 0.1;
-//     if(up)
-//         zoomFactor = s - 0.1;
-        
-//     zoom.scale(zoomFactor);
-//     //zoom.translate(t);
-
-//     var newx = ((w - (w * zoomFactor))/2.0) ;
-//     var newy = ((h - (h * zoomFactor))/2.0) ;
-//     zoom.translate([newx,newy]);
-//     var svg = d3.select('#myScrollArea');
-//     svg.transition().duration(500).attr('transform', 'translate(' + zoom.translate() + ') scale(' + zoom.scale() + ')');
-// }
-
 
     d3.json('data/graph.json', function(json){
 
@@ -73,18 +36,16 @@ var color = d3.scaleOrdinal()
                 .append("text")                
                 .attr("dy", "0.35em")     
                 .attr("class","label")                
-                .attr("text-anchor", "middle")
-                // .style("z-index","9999")
+                .attr("text-anchor", "middle")                
                 .text(function(d) {return x;});
-                
-
                     console.log('sel:' + parent);
 
             }
 
-
+    //enrich original dataset
     json.nodes.forEach(function(d,index) {
-       d["id"] = index;    
+       d["id"] = index;
+       d['selected'] = false;
     });
     json.links.forEach(function(d,index){
         d["id"] = "_"+ d.source + "_" +d.target;
@@ -107,17 +68,11 @@ var color = d3.scaleOrdinal()
             d.fy = null;
         } 
 
-            // var zoom = d3.zoom()
-            //             .scaleExtent([0.2, 0.1])
-            //             .on("zoom", zoomed);
-            
             var zoom = d3.zoom().on("zoom", zoomed);
             var div = d3.select('body')
                 .append('div')
                 .classed("svg-container", true)
             var svg =  div.append('svg')
-                    // .attr('width', viewerWidth)
-                    // .attr('height', viewerHeight);
                     .attr("preserveAspectRatio", "xMinYMin meet")
                     .attr("viewBox", "0 0 "+ viewerWidth+ " " + viewerHeight)
                     // Class to make it responsive.
@@ -136,17 +91,9 @@ var color = d3.scaleOrdinal()
                     .attr('id','myScrollArea')
                     ;
  
-            
 
-            
-
-            // zoomer.call(zoom.transform, d3.zoomIdentity.translate(150,0)); //This is to pad my svg by a 150px on the left hand side
-            // function zoomed() {
-            //     g.attr("transform", d3.event.transform);//The zoom and panning is affecting my G element which is a child of SVG
-            // }  
             function zoomed() {
-                g.style("stroke-width", 1.5 / d3.event.transform.k + "px");
-                // g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")"); // not in d3 v4
+                g.style("stroke-width", 1.5 / d3.event.transform.k + "px");                
                 g.attr("transform", d3.event.transform); // updated for d3 v4
                 }  
 
@@ -185,12 +132,12 @@ var color = d3.scaleOrdinal()
                 .on("drag", dragged)
                 .on("end", dragended));  
 
-                node
+            node
             .transition()
                 .delay(function(d,i){ return i/ json.nodes.length * 100})
                 .on("end", 
                     function(d,i){
-                        if(d.terminal == 1){                                    
+                        if(d.terminal == 1){
                             add_label(this, d.linea);
                         }
                 });
@@ -201,8 +148,7 @@ var color = d3.scaleOrdinal()
                 .attr('fill', function (d) {
                     return color(d.linea);
                 })
-                .attr("id", function(d,i){ return "_"+i;});
-            //draw labels 
+                .attr("id", function(d,i){ return "_"+i;});            
 
             node.append("text")
                 .attr("dx", -18)
@@ -216,20 +162,19 @@ var color = d3.scaleOrdinal()
             circle
             .on('mouseover', function(d){
                 d3.select(this)
-                    .transition().attr('r', 14)
-                
+                    .transition()
+                    .attr('r', 14)
+                    // .style('strok-width', '2px')
+                    // .style('strok', 'chartreuse')
             })
             .on('mouseout', function(d,i){
-                if (d.terminal !== 1) {
-                    d3.select(this).transition().attr('r', 7)
+                if (d.terminal !== 1 && d.selected == false) {
+                    d3.select(this)
+                      .transition()
+                      .attr('r', 7)
+                    //   .attr('class', null)
                 }
             })
-
-            // node.moveToFront();
-    
-            
-            // create the layout
-
 
             force.on("tick", function () {
                 link.attr("x1", function (d) {
@@ -248,9 +193,13 @@ var color = d3.scaleOrdinal()
                     return "translate(" + d.x + "," + d.y + ")";
                 });
             });
-            // bind the drag interaction to the nodes
-            // node.call(force.drag);
-            circle.on("click", function(d){click(d)}) 
+            
+            circle.on("click", function(d){
+                console.log(d); //considering dot has a title attribute
+                d.selected = true;
+                click(d)
+            
+            }) 
 
             var cont = 1;
             var start, end;
@@ -259,14 +208,12 @@ var color = d3.scaleOrdinal()
             function path(next, u, v){
                 var path = [];
                 path.push(v.toString());
-                if (next[u][v] == -1)                
-                    return [];    
-                           
+                if (next[u][v] == -1)
+                    return [];
                 while (u != v){
-                    v = next[u][v].toString();              
+                    v = next[u][v].toString();
                     path.push(v);
-                    
-                }                    
+                }
                 return path;
             }
 
@@ -325,7 +272,7 @@ var color = d3.scaleOrdinal()
                             .attr("r",function(d){
                                 if (d.terminal !== 1) {
                                     return 7;
-                                }else{
+                                }else{                                    
                                     return 12;
                                 }
                             })
@@ -345,14 +292,12 @@ var color = d3.scaleOrdinal()
             
             function click(d) 
             {
-                console.log(d); //considering dot has a title attribute
-                
                 if (cont % 2 == 0){
-                    end = d.id;
-
-                    d3.select('circle#_'+end)
+                    // end node selected
+                    end_node = d;
+                    end = end_node.id;
+                    d3.select('circle#_' + end)
                         .style("opacity",1.0);
-
 
                     console.log('end: ' + end);
                     d3.json('data/floyd.json', function(data)
@@ -360,7 +305,7 @@ var color = d3.scaleOrdinal()
 	                    var len = data.dist[start][end];
 	                    console.log('La distancia más corta entre '+json.nodes[start].name+' y '+json.nodes[end].name+' es de ' + len + ' estaciones.');
 	                    ruta = path(data.pred, start, end);
-                        ruta.reverse();                        
+                        ruta.reverse();
 
                         var selection = g.selectAll('g')
                             .filter(function(d){ return ruta.indexOf(d.id.toString()) >- 1;});
@@ -402,57 +347,19 @@ var color = d3.scaleOrdinal()
                             .style("opacity", 0.2)
                             .delay(function(d,i) { return i/ len * 10;})
 
-
-
-                        /*selection
-                        .sort(sortItems)                                
-                        .select("text")
-                            .transition()
-                            .delay(function(d,i) { return i/ len * enter_duration;})
-                            .attr("dx", function(d) { return +12; });
-                          */  
-                            
-
                         cycle(selection,len,3);
 
-                
-
-	                   /*
-	                    	//console.log(json.nodes[ruta[i]].name);
-	                    	var v = ruta[i];
-	                    	var next_v = ruta[(i+1)%ruta.length];
-
-			                d3.select('circle#_' + v)
-		                        .transition()
-		                        .delay(function(d,i) { return i/ len * enter_duration;})
-		                        .style("opacity",1.0)
-		                        .attr("r", 10.0)
-		                        .each("end",function() { 
-		                            d3.select(this).       // so far, as above
-		                                transition()
-		                                .delay(function(d,i) { return i/ len * enter_duration;})
-		                                .attr("r",7)
-		                                .style("opacity",0.7);            // we delete the object instead 
-		                        });
-
-		                    //console.log('line#_' + last_v + "_" + v);
-		                    d3.select('line#_' + v + "_" + next_v)
-		                     .transition()  
-		                     .delay(function(d,i) { return i/ len * enter_duration;})                      
-		                        .style('stroke-width', 4)                        
-		                        .each("end", function(){
-		                        	d3.select(this).
-		                        		transition()
-		                        		.delay(function(d,i) { return i/ len * enter_duration;})
-		                                .style('stroke-width', 2);                        		
-		                        });
-*/
-	                    
 	                });
+                    //clear selections
+                    start_node.selected = false;                    
+                    end_node.selected = false;
+                    
                 }else{
-                    start = d.id;
-                    d3.select('circle#_'+start)
-                        .style("opacity",1.0);
+                    // start node selected
+                    start_node = d;
+                    start = d.id
+                    d3.select('circle#_' + start)
+                            .style("opacity",1.0);
                     console.log('start :' + start);
                 }
 
