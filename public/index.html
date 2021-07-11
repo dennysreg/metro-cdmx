@@ -1,90 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" href="css/style.css">
     <meta charset="utf-8">  
 <script src="scripts/jquery.js"></script>  
-  <script src="scripts/d3.min.js"></script>
+  <!-- <script src="scripts/d3.min.js"></script> -->
+  <script src="https://d3js.org/d3.v4.min.js"></script>
 
-    <style>
-    circle {
-        /*stroke:black;
-        stroke-width:1px;
-        fill:MediumSeaGreen;
-        opacity:0.5;*/
-    
-    }
 
-    div{
-        border: solid 1px red;
-        width: 1000px;
-        height: 1000px;
-    }
-.linelabel
-{
-    stroke: none;
-    font-size: 10px;
-    font-weight: bold;
-    font-family: sans-serif;
-}
-    </style>
 </head>
 <body>
- <button onclick="StartScroll (false)" >+</button>
+ <!-- <button onclick="StartScroll (false)" >+</button>
     <button onclick="StartScroll (true)" >-</button>
-    <button onclick="ResetZoom()" >Reset</button>
-<div id="chart"></div>
-    <script>
-     var width = 1000,
-         height = 1000;
+    <button onclick="ResetZoom()" >Reset</button> -->
+<!-- <div id="chart"></div> -->
 
+<script>
+    var viewerWidth =1800,
+        viewerHeight = 1200;
 
-
-
-//var color = d3.scale.category10();
-    var color = d3.scale.ordinal()
+var color = d3.scaleOrdinal()
+// var color = d3.scale.ordinal()
   .domain(["1","2","3","4","5","6","7","8","9","10","11","12"])
   .range(["#F248A4","#1378C7","#7E9426","#8ACEB5","#FEE011","#E22D27","#F68429","#009A68","#542917","#8A2495","#97A0A7","#AB9848"]);
 
-         function redraw() {
-              console.log("here", d3.event.translate, d3.event.scale);
-              var svg = d3.select('#myScrollArea');
-              svg.attr("transform",
-                  "translate(" + d3.event.translate + ")"
-                  + " scale(" + d3.event.scale + ")");
-            }
 
-var zoom = d3.behavior.zoom().on("zoom", redraw);
+// function ResetZoom(){
+//     zoom.translate([0,0])
+//     .scale(1); 
+//     var svg = d3.select('#myScrollArea');
+//                 svg.transition().duration(500).attr('transform', 'translate(' + zoom.translate() + ') scale(' + zoom.scale() + ')');
+// }
+// function StartScroll(up) {
+//     var t = zoom.translate();
+//     var s = zoom.scale();
+//     var chart = document.getElementById('viz');
+//     var w = chart.getAttribute('width')/2.0;
+//     var h = chart.getAttribute('height')/2.0;
 
-function ResetZoom(){
-    zoom.translate([0,0])
-    .scale(1); 
-    var svg = d3.select('#myScrollArea');
-                svg.transition().duration(500).attr('transform', 'translate(' + zoom.translate() + ') scale(' + zoom.scale() + ')');
-}
-function StartScroll(up) {
+//         console.log("here", t, s, w, h);
 
-                
-                 var t = zoom.translate();
-                var s = zoom.scale();
-                var chart = document.getElementById('viz');
-                var w = chart.getAttribute('width')/2.0;
-                var h = chart.getAttribute('height')/2.0;
+//         var zoomFactor = s + 0.1;
+//     if(up)
+//         zoomFactor = s - 0.1;
+        
+//     zoom.scale(zoomFactor);
+//     //zoom.translate(t);
 
-                 console.log("here", t, s, w, h);
-
-                 var zoomFactor = s + 0.1;
-                if(up)
-                    zoomFactor = s - 0.1;
-                    
-                zoom.scale(zoomFactor);
-                //zoom.translate(t);
-
-                var newx = ((w - (w * zoomFactor))/2.0) ;
-                var newy = ((h - (h * zoomFactor))/2.0) ;
-                zoom.translate([newx,newy]);
-                var svg = d3.select('#myScrollArea');
-                svg.transition().duration(500).attr('transform', 'translate(' + zoom.translate() + ') scale(' + zoom.scale() + ')');
-            }
+//     var newx = ((w - (w * zoomFactor))/2.0) ;
+//     var newy = ((h - (h * zoomFactor))/2.0) ;
+//     zoom.translate([newx,newy]);
+//     var svg = d3.select('#myScrollArea');
+//     svg.transition().duration(500).attr('transform', 'translate(' + zoom.translate() + ') scale(' + zoom.scale() + ')');
+// }
 
 
     d3.json('data/graph.json', function(json){
@@ -94,7 +64,6 @@ function StartScroll(up) {
             this.parentNode.appendChild(this);
           });
         };
-
         function add_label(g, x){
                 d3.select(g)
                     .select("circle")
@@ -115,6 +84,7 @@ function StartScroll(up) {
 
             }
 
+
     json.nodes.forEach(function(d,index) {
        d["id"] = index;    
     });
@@ -122,81 +92,126 @@ function StartScroll(up) {
         d["id"] = "_"+ d.source + "_" +d.target;
     });
 
+    function dragstarted(d) {
+            if (!d3.event.active) force.alphaTarget(0.5).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragged(d) {
+            d.fx = d3.event.x;
+            d.fy = d3.event.y;
+        }
+        
+        function dragended(d) {
+            if (!d3.event.active) force.alphaTarget(0.5);
+            d.fx = null;
+            d.fy = null;
+        } 
 
-
-       
-            
-            var svg = d3.select('#chart')
-              .append('svg:svg')                
-                .attr('width', width)
-                .attr('height', height)
-                .attr("pointer-events", "all")
-                 .append('svg:g')
-                .call(zoom.on("zoom", redraw))
-                .append('svg:g')
-                .attr('id','myScrollArea');
-
-            svg.append('svg:rect')
-                .attr('width', width)
-                .attr('height', height)
-                .attr('fill', 'white')
+            var zoom = d3.zoom()
+                        .scaleExtent([0.2, 0.1])
+                        .on("zoom", zoomed);
+            var div = d3.select('body')
+                .append('div')
+                .classed("svg-container", true)
+            var svg =  div.append('svg')
+                    // .attr('width', viewerWidth)
+                    // .attr('height', viewerHeight);
+                    .attr("preserveAspectRatio", "xMinYMin meet")
+                    .attr("viewBox", "0 0 1400 1400")
+                    // Class to make it responsive.
+                    .classed("svg-content-responsive", true);
+                                
+            var zoomer = svg.append('rect')
+                .classed("rect", true)
+                .attr('width', viewerWidth)
+                .attr('height', viewerHeight)
+                .style('fill', 'none')
+                .style('pointer-events', 'all')
+                .call(zoom)
                 .attr('id','viz');
-
-   
+            
+            var g = svg.append('g')
+                    .attr('id','myScrollArea');
+ 
             
 
-                
+            
+
+            zoomer.call(zoom.transform, d3.zoomIdentity.translate(150,0)); //This is to pad my svg by a 150px on the left hand side
+            function zoomed() {
+                g.attr("transform", d3.event.transform);//The zoom and panning is affecting my G element which is a child of SVG
+            }    
+
             var elem = svg.selectAll("g")
                             .data(json.nodes); 
 
-            var elemEnter = elem.enter()
-                .append("g")
-                .attr("transform", function(d){return "translate("+d.x +"," + d.y + ")";})
-                .attr("id", function(d){return d.id;});
+             // draw the graph edges       
+            var force = d3.forceSimulation() 
+            .force("charge",d3.forceManyBody().strength(-250).distanceMin(100).distanceMax(1000)) 
+            .force("link", d3.forceLink().id(function(d) { return d.index }))
+            .force("center", d3.forceCenter(svg.node().getBoundingClientRect().width/2, svg.node().getBoundingClientRect().height/2))
+            .force("y", d3.forceY(0.01))
+            .force("x", d3.forceX(0.01))
 
+            force
+                .nodes(json.nodes) 
+                .force("link").links(json.links)
 
-             // draw the graph edges
-            var link = svg.selectAll("line.link")
-              .data(json.links)
-              .enter().append("line")                
-                .attr('class', 'link')
+            var link = svg.selectAll(".link")
+                .data(json.links)
+                .enter()
+                .append("line")
+                .attr("class", "link")
                 .style('opacity',0.7)
                 .style('stroke',function (d) { return color(d.linea); })
                 .style('stroke-width', 3)
                 .attr("id", function(d){ return "_"+d.source + "_" + d.target;});
+; 
 
+            var node = svg.selectAll(".node")
+                .data(json.nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));  
 
-            elemEnter
+                node
             .transition()
                 .delay(function(d,i){ return i/ json.nodes.length * 100})
-                .each("end", 
+                .on("end", 
                     function(d,i){
                         if(d.terminal == 1){                                    
                             add_label(this, d.linea);
                         }
                 });
-            // draw the graph nodes     
-            var circle = 
-                elemEnter
-                .append("circle")
-                .attr("r", 7)
+                
+            var circle = node.append('circle')
+                .attr('r', 7)
                 .style("opacity", 0.7)
-                .style("fill", function (d) { return color(d.linea); })
+                .attr('fill', function (d) {
+                    return color(d.linea);
+                })
                 .attr("id", function(d,i){ return "_"+i;});
-               
             //draw labels 
-            elemEnter
-                .append("text")
-                .attr("font-size", "10px")
-                .attr("font-family","sans-serif")                
-                .attr("dy", function(d){return 15})
-                .text(function(d) {return d.name});
-            
 
-                circle
+            node.append("text")
+                .attr("dx", -18)
+                .attr("dy", 9)
+                .classed('label', true)
+                .attr("dy", function(d){return 15})
+                .text(function (d) {
+                    return d.name
+                });
+
+            circle
             .on('mouseover', function(d){
                 d3.select(this)
-                    .transition().attr('r', 12)
+                    .transition().attr('r', 14)
+                
             })
             .on('mouseout', function(d,i){
                 if (d.terminal !== 1) {
@@ -204,48 +219,32 @@ function StartScroll(up) {
                 }
             })
 
-            elemEnter.moveToFront();
-            /*var node = svg.selectAll("circle.node")
-              .data(json.nodes)
-              .enter()
-              .append("circle")
-                .attr("class", "node")
-                .attr("r", 7)
-                .attr("cx", function(d) { return d.x;})
-                .attr("cy", function(d) { return d.y;})
-                .style("opacity", 0.7)
-                .style("fill", function (d) { return color(d.linea); });
-            */
-           
+            // node.moveToFront();
+    
             
             // create the layout
-            var force = d3.layout.force()
-                .charge(-150)
-                .linkDistance(25)
-                .size([width, height])
-                .nodes(json.nodes)
-                .links(json.links)
-                .start();
-            
-            // define what to do one each tick of the animation
-            force.on("tick", function() {
-                link.attr("x1", function(d) { return d.source.x; })
-                    .attr("y1", function(d) { return d.source.y; })
-                    .attr("x2", function(d) { return d.target.x; })
-                    .attr("y2", function(d) { return d.target.y; });
-                /*
-                node.attr("cx", function(d) { return d.x; })
-                    .attr("cy", function(d) { return d.y; });*/
-                elem.attr("transform", function(d){return "translate("+d.x +"," + d.y + ")";});
 
+
+            force.on("tick", function () {
+                link.attr("x1", function (d) {
+                        return d.source.x;
+                    })
+                    .attr("y1", function (d) {
+                        return d.source.y;
+                    })
+                    .attr("x2", function (d) {
+                        return d.target.x;
+                    })
+                    .attr("y2", function (d) {
+                        return d.target.y;
+                    });
+                    node.attr("transform", function (d) {
+                    return "translate(" + d.x + "," + d.y + ")";
                 });
-
+            });
             // bind the drag interaction to the nodes
-            elem.call(force.drag);
-            //node.call(force.drag);
-
-
-            circle.on("click", function(d){click(d)}) 
+            // node.call(force.drag);
+            // circle.on("click", function(d){click(d)}) 
 
             var cont = 1;
             var start, end;
